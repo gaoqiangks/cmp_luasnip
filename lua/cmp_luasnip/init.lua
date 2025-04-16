@@ -1,4 +1,6 @@
 local cmp = require("cmp")
+local ls = require("luasnip")
+local ls_source = ls.snippet_source
 local util = require("vim.lsp.util")
 
 local source = {}
@@ -61,6 +63,35 @@ function source:get_debug_name()
 	return "luasnip"
 end
 
+
+
+function get_basename(path)
+    -- 提取文件名（去掉路径）
+    local filename = path:match("([^/\\]+)$")
+
+    -- 去掉扩展名
+    local basename = filename:match("(.+)%..+$") or filename
+
+    return basename
+end
+
+-- 示例用法
+-- local path = "/some/path/to/file/example.txt"
+-- print(get_basename(path))  -- 输出: example
+--
+--
+--
+function remove_class_prefix_if_exists(str)
+    -- 检查字符串是否以 "class-" 开头
+    if str:find("^class%-") then
+        -- 去掉 "class-"
+        return str:gsub("^class%-", "")
+    else
+        -- 不作任何处理
+        return str
+    end
+end
+
 function source:complete(params, callback)
 	init_options(params)
 
@@ -84,6 +115,14 @@ function source:complete(params, callback)
 				local tab,auto = unpack(ele)
 				for j, snip in pairs(tab) do
 					if not snip.hidden then
+                        -- log("snip= "..vim.inspect(snip))
+                        local file = ls_source.get(snip) and ls_source.get(snip).file
+                        if not file then
+                            file = ""
+                        else
+                            file = get_basename(file)
+                            file = remove_class_prefix_if_exists(file)
+                        end
 						ft_items[#ft_items + 1] = {
 							word = snip.trigger,
 							label = snip.trigger,
@@ -95,6 +134,10 @@ function source:complete(params, callback)
 								show_condition = snip.show_condition,
 								auto = auto
 							},
+                            labelDetails = {
+                                detail = file
+                                -- description = "test file",
+                            },
 						}
 					end
 				end
@@ -115,6 +158,7 @@ function source:complete(params, callback)
 		end, items)
 	end
 
+    log("luasnip, items= "..vim.inspect(items))
 	callback(items)
 end
 
