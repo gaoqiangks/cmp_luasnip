@@ -116,6 +116,8 @@ function source:complete(params, callback)
 				for j, snip in pairs(tab) do
 					if not snip.hidden then
                         -- log("snip= "..vim.inspect(snip))
+                        -- log("description= "..vim.inspect(snip.description))
+                        -- log("desc= "..vim.inspect(snip.desc))
                         local file = ls_source.get(snip) and ls_source.get(snip).file
                         if not file then
                             file = ""
@@ -128,14 +130,16 @@ function source:complete(params, callback)
 							label = snip.trigger,
 							kind = cmp.lsp.CompletionItemKind.Snippet,
 							data = {
-								priority = snip.effective_priority or 1000, -- Default priority is used for old luasnip versions
+								-- priority = snip.effective_priority or 1000, -- Default priority is used for old luasnip versions
+                                -- 正确的字段应该是priority, 而不是effective_priority
+								priority = snip.priority or 1000, -- Default priority is used for old luasnip versions
 								filetype = ft,
 								snip_id = snip.id,
 								show_condition = snip.show_condition,
 								auto = auto
 							},
                             labelDetails = {
-                                detail = file
+                                detail = snip.description and (table.concat(snip.description)) or file
                                 -- description = "test file",
                             },
 						}
@@ -143,6 +147,7 @@ function source:complete(params, callback)
 				end
 			end
 			table.sort(ft_items, function(a, b)
+                -- log("ft_items= "..vim.inspect(ft_items))
 				return a.data.priority > b.data.priority
 			end)
 			snip_cache[ft] = ft_items
@@ -158,7 +163,7 @@ function source:complete(params, callback)
 		end, items)
 	end
 
-    log("luasnip, items= "..vim.inspect(items))
+    -- log("luasnip, items= "..vim.inspect(items))
 	callback(items)
 end
 
